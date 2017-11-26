@@ -12,9 +12,17 @@ public class Layer {
         m_list= new Vector<GraphicsObject>();
         String str = json.replaceAll("\\s+","");
         int objectsIndex = str.indexOf("objects");
+        int groupsIndex = str.indexOf("groups");
         int endIndex = str.lastIndexOf("}");
 
-        parseObjects(str.substring(objectsIndex + 9, endIndex - 1));
+        // si il y a des groupes
+        if(groupsIndex > -1){
+            parseObjects(str.substring(objectsIndex + 9, groupsIndex - 2));
+            parseGroups(str.substring(groupsIndex + 8, endIndex - 1));
+        } else { //sinon
+            parseObjects(str.substring(objectsIndex + 9, endIndex - 1));
+        }
+
     }
 
     public void add(GraphicsObject o) {
@@ -48,6 +56,25 @@ public class Layer {
                 objectsStr = "";
             } else {
                 objectsStr = objectsStr.substring(separatorIndex + 1);
+            }
+        }
+    }
+
+    private void parseGroups(String groupsStr) {
+        while (!groupsStr.isEmpty()) {
+            int separatorIndex = searchSeparator(groupsStr);
+            String groupStr;
+
+            if (separatorIndex == -1) {
+                groupStr = groupsStr;
+            } else {
+                groupStr = groupsStr.substring(0, separatorIndex);
+            }
+            m_list.add(JSON.parseGroup(groupStr));
+            if (separatorIndex == -1) {
+                groupsStr = "";
+            } else {
+                groupsStr = groupsStr.substring(separatorIndex + 1);
             }
         }
     }
@@ -88,7 +115,7 @@ public class Layer {
         return list;
     }*/
 
-    public String toJson() {
+    /*public String toJson() {
         String str = "{ type: layer, objects : { ";
 
         for (int i = 0; i < m_list.size(); ++i) {
@@ -97,6 +124,31 @@ public class Layer {
             str += element.toJson();
             if (i < m_list.size() - 1) {
                 str += ", ";
+            }
+        }
+        return str + " } }";
+    }*/
+
+    public String toJson() {
+        String str = "{ type: layer, objects : { ";
+
+        for (int i = 0; i < m_list.size(); ++i) {
+            if (!m_list.elementAt(i).isGroup()){
+                GraphicsObject element = m_list.elementAt(i);
+
+                str += element.toJson();
+                if (i < m_list.size() - 1) {
+                    str += ", ";
+                }
+            }
+        }
+
+        for (int i = 0; i < m_list.size(); ++i) {
+            if (m_list.elementAt(i).isGroup()){
+                str += " }, groups : { ";
+                Group element = (Group)m_list.elementAt(i);
+
+                str += element.toJson();
             }
         }
         return str + " } }";
